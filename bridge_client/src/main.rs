@@ -24,30 +24,56 @@ fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
-    // Pisahkan nama program dan argumennya
-    let program = args[1].clone();
-    let program_args = args[2..].to_vec();
+    // Mapping command
+    // Jika "tap" = DirectTap
+    // Jika "input tap" = Shell biasa (Exec)
+    let command = if args[1] == "tap" {
+        if args.len() < 4 {
+            eprintln!("Error: Gunakan format 'andro tap <x> <y>'");
+            return Ok(());
+        }
 
-    // Bungkus dalam protokol Exec
-    let command = BridgeCommand::Exec {
-        program,
-        args: program_args
+        let x = args[2].parse::<i32>().expect("X harus angka integer");
+        let y = args[3].parse::<i32>().expect("Y harus angka integer");
+
+        BridgeCommand::DirectTap { x, y }
+    } else {
+        // Jika "input tap" Mode Exec (Shell)
+        BridgeCommand::Exec {
+            program: args[1].clone(),
+            args: args[2..].to_vec()
+        }
     };
 
     // Kirim
-    let mut stream = UnixStream::connect(SOCKET_PATH).expect("Server mati/socket tidak ditemukan");
-    let json_payload = serde_json::to_vec(&command).unwrap();
-    stream.write_all(&json_payload)?;
+    let mut stream = UnixStream::connect(SOCKET_PATH).map_err(|e| {
+        eprintln!("Gagal connect ke {}. Pastikan Server nyala!", SOCKET_PATH);
+        e
+    })?;
 
-    // Baca Balikan (Response)
-    let mut response_str = String::new();
-    stream.read_to_string(&mut response_str)?;
+    // Serialize Command ke Bytes (Bincode)
+    let bin_payload = bincode::serialize(&command).expect("Gagal serialize");
+    stream.write_all(&bin_payload)?;
 
-    let response: BridgeResponse = serde_json::from_str(&response_str).unwrap();
+    // Baca Response
+    // Bincode butuh byte array, bukan String
+    let mut buffer = Vec::new();
+    stream.read_to_end(&mut buffer)?;
+    if buffer.is_empty() {
+        eprintln!("Server tidak memberikan respon.");
+        return Ok(());
+    }
+    let response: BridgeResponse = bincode::deserialize(&buffer).expect("Gagal deserialize response");
 
     match response {
-        BridgeResponse::Success(out) => print!("{}", out), // Print stdout
-        BridgeResponse::Error(err) => eprintln!("Error: {}", err),
+        BridgeResponse::Success(out) => {
+            if !out.is_empty() {
+            print!("{}", out); // Print stdout
+            }
+        },
+        BridgeResponse::Error(err) => {
+            eprintln!("Remote Error: {}", err);
+        }
     }
 
     Ok(())
