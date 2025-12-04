@@ -2,7 +2,7 @@ name: Build and Release NativeBridge
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "unit-test" ]
   pull_request:
     branches: [ "main" ]
   create:
