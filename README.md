@@ -38,6 +38,12 @@ graph LR
 - **Chroot Environment** (Ubuntu, Debian, Kali, Fedora, etc).
 - **Rust Toolchain** (Only if building from source).
 
+## Important Note on Hardcoded Paths:
+
+Please be aware that the `TOUCH_DEVICE` path in `bridge_server/src/input_manager.rs` and the `SOCKET_PATH` (which defines the rootfs location for the Unix Domain Socket) in `bridge_server/src/main.rs` are currently hardcoded.
+
+These paths are specific to the environment where the NativeBridge server is running and the Android device's input configuration. **You MUST adjust these paths** in the respective source files (`bridge_server/src/input_manager.rs` and `bridge_server/src/main.rs`) to match your particular root filesystem setup and the actual touch device path on your Android host system before building and running the server. Failure to do so will result in connection issues or non-functional direct input commands.
+
 ## Building from Source
 
 Since we want to run these binaries on Android, we must build them statically using `musl`.
