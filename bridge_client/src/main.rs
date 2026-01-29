@@ -12,10 +12,10 @@ const SOCKET_PATH: &str = "/tmp/bridge.sock";
 #[command(name = "andro")]
 #[command(about = "NativeBridge Client for Android Chroot", long_about = None, arg_required_else_help = true)]
 struct Cli {
-    #[arg(short, long, value_name = "CMD", num_args=1.., conflicts_with_all=&["stream", "command"])]
+    #[arg(short = 'e', long = "exec", value_name = "CMD", num_args=1.., conflicts_with_all=&["stream", "command"], allow_hyphen_values=true)]
     exec: Option<Vec<String>>,
 
-    #[arg(short, long, value_name = "CMD", num_args=1.., conflicts_with_all=&["exec", "command"])]
+    #[arg(short = 's', long = "stream", value_name = "CMD", num_args=1.., conflicts_with_all=&["exec", "command"], allow_hyphen_values=true)]
     stream: Option<Vec<String>>,
 
     #[command(subcommand)]
